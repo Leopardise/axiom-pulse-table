@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Axiom Pulse – Token Discovery Table (Replica)
 
-## Getting Started
+This project is a pixel-inspired replica of the **Axiom Trade Pulse** token discovery table.  
+It focuses on **smooth performance**, **reusable architecture**, and **rich interactions** for token discovery.
 
-First, run the development server:
+## Live Links
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Production (Vercel)**: TODO – add deployed URL  
+- **GitHub Repository**: TODO – add repo URL  
+- **Demo Video (YouTube)**: TODO – add unlisted YouTube link  
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: Next.js 16 (App Router) + TypeScript (strict)
+- **Styling**: Tailwind CSS
+- **State Management**: Redux Toolkit
+- **Data Fetching / Caching**: React Query
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com) (Radix-based)
+  - `Dialog`, `Tooltip`, `Popover`, `Skeleton`, `ScrollArea`, `Button`
+- **Icons**: `lucide-react`
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## High-Level Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. Token Discovery Table
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Three lanes:
+  - **New Pairs**
+  - **Final Stretch**
+  - **Migrated**
+- Each lane shows:
+  - Token name + symbol
+  - Price (tabular-nums)
+  - 5m price change (color-coded with smooth transitions)
+  - Age (minutes / hours)
+  - **Quick Buy** pill opening a detailed modal
 
-## Deploy on Vercel
+### 2. Interaction Patterns
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Hover**: subtle row highlight, info icon fades in
+- **Tooltip**: hover over info icon for quick explanation
+- **Popover**: click info icon to see age / market cap / liquidity snapshot
+- **Modal (Dialog)**:
+  - Click row or Quick Buy to open a detail view
+  - Close via X button, overlay click, or ESC
+- **Sorting**:
+  - Click headers “Price / 5m / Age” to sort ascending/descending
+  - Sort state is per-column component
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. Real-Time Price Updates (WebSocket Mock)
+
+- `createMockPriceFeed` simulates a WebSocket stream:
+  - Every 1.5 seconds it pushes updated prices and 5m changes.
+  - Redux store is updated via `updateTokenPrice`.
+- 5m change cells use CSS transitions for **smooth color changes** when values update.
+
+### 4. Loading, Error & Resilience
+
+- **Loading**:
+  - Initial token fetch is artificially delayed.
+  - During this, each column shows multiple **skeleton rows** with shimmer-style placeholders.
+- **Error**:
+  - Columns can render a red error card if React Query reports `isError`.
+  - A global `app/error.tsx` error boundary shows a fallback UI for unexpected errors.
+
+---
+
+## Architecture & Code Organization
+
+```txt
+src/
+  app/
+    layout.tsx          # Shell + Providers
+    page.tsx            # Pulse layout + TokenTable
+    error.tsx           # Global error boundary
+    providers.tsx       # Redux + React Query providers
+  components/
+    token-table/
+      TokenTable.tsx        # Top-level container, 3 columns
+      TokenColumn.tsx       # Single lane (New/Final/Migrated)
+      TokenRow.tsx          # Row with tooltip, popover, modal, quick buy
+      TokenSkeletonRow.tsx  # Loading skeleton row
+    shared/
+      StatusBadge.tsx       # Reusable pill badge
+  hooks/
+    useTokens.ts        # React Query + Redux sync
+    usePriceFeed.ts     # Mock WebSocket price streaming
+  lib/
+    queryClient.ts      # React Query client
+    mockPriceFeed.ts    # WebSocket-like price feed mock
+    formatters.ts       # Price / number / age formatting
+  store/
+    index.ts            # Redux store + typed hooks
+    tokensSlice.ts      # Tokens state + reducers
+  types/
+    token.ts            # Token & TokenStatus types
